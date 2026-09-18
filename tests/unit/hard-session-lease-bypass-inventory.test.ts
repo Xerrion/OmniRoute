@@ -94,6 +94,10 @@ const EXPECTED: Record<InventoryKind, Record<string, number>> = {
     "open-sse/services/alibabaFreeTierQuotaFetcher.ts": 1,
     // Family cooldown persist looks the row up to write PSD, not dispatch.
     "open-sse/services/antigravityFamilyCooldown.ts": 1,
+    // #12864: on the first REQUEST_REJECTED refusal seen by this process the
+    // streak seeder reads the row's lastErrorType/lastErrorAt so a crash loop
+    // cannot reset the backoff count on every boot — a state read, not dispatch.
+    "open-sse/handlers/chatCore/requestRejectedFailure.ts": 1,
     // v3.8.50 back-merge additions (f95b03d7): combo routing infra and the
     // volcengine-plan binding/auto-sync services query connections the same
     // way as their classified siblings.
