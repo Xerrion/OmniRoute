@@ -77,3 +77,14 @@ test("#6700 the better-sqlite3 rebuild happens after `npm ci --ignore-scripts` a
     "order must be: npm ci --ignore-scripts -> node-gyp rebuild -> smoke-load"
   );
 });
+
+test("#6700 node-gyp uses the matching headers bundled in the official Node image", () => {
+  const { start, end } = builderStageRange();
+  const stage = lines.slice(start, end).join("\n");
+
+  assert.match(
+    stage,
+    /node-gyp\.js rebuild\b[^\n]*--nodedir=\/usr\/local/,
+    "builder stage must use the bundled Node headers instead of downloading them during build"
+  );
+});
