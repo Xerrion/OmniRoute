@@ -23,21 +23,23 @@ OmniRoute વિચારણા-મોડ મોડેલો દ્વારા 
 
 ```
 ટર્ન N (સહાયક જનરેટ કરે છે):
-  → પ્રતિસાદમાં reasoning_content + tool_calls હોય છે
+  → પ્રતિસાદમાં reasoning_content + tool_calls સામેલ છે
   → જો requiresReasoningReplay(provider, model): cacheReasoningFromAssistantMessage()
-      દરેક tool_call.id દ્વારા કી કરેલું (memory + DB) લખે છે
+      દરેક tool_call.id દ્વારા કી કરીને (મેમરી + DB) માં લખે છે
   → પ્રતિસાદ ક્લાયન્ટને ફોરવર્ડ કરે છે (જે રીઝનિંગ જાળવી પણ શકે અથવા ન પણ જાળવે)
 
-ટર્ન N+1 (ક્લાયન્ટ અનુગામી વિનંતી મોકલે છે):
+ટર્ન N+1 (ક્લાયન્ટ અનુવર્તી સંદેશ મોકલે છે):
   → ટ્રાન્સલેટર શોધે છે: requiresReasoningReplay(provider, model) === true
-  → tool_calls ધરાવતા અને reasoning_content ન ધરાવતા દરેક સહાયક સંદેશા માટે:
-      lookupReasoning(toolCalls[0].id) → memory → DB
+  → tool_calls ધરાવતા અને reasoning_content વિનાના દરેક સહાયક સંદેશ માટે:
+      lookupReasoning(toolCalls[0].id) → મેમરી → DB
       હિટ  → msg.reasoning_content = cached; recordReplay()
       મિસ → msg.reasoning_content = "" (જૂના DeepSeek માટે લેગસી ફૉલબૅક)
-  → અપસ્ટ્રીમને સુસંગત ઇતિહાસ દેખાય છે → 400 નહીં
+  → અપસ્ટ્રીમને સુસંગત હિસ્ટ્રી મળે છે → 400 નહીં
 ```
 
-કૅપ્ચરિંગ `open-sse/handlers/chatCore.ts` માં થાય છે (બે સ્થાનો પર, બે `cacheReasoningFromAssistantMessage` કૉલ સાઇટ્સ પર). રીપ્લે સ્કીમા કોઅર્શન પછી પરંતુ ડિસ્પૅચ પહેલાં `open-sse/translator/index.ts` માં થાય છે.
+કૅપ્ચર `open-sse/handlers/chatCore.ts` માં થાય છે (બે સ્થળે, બે `cacheReasoningFromAssistantMessage` કૉલ સાઇટ્સ પર). રીપ્લે સ્કીમા કોઅર્શન પછી પરંતુ ડિસ્પૅચ પહેલાં `open-sse/translator/index.ts` માં થાય છે.
+
+સાદા (ટૂલ-કૉલ વિનાના) સહાયક ટર્ન્સની કી અલગ રીતે નક્કી થાય છે: `buildAssistantMessageCacheKey()` સેશન સ્કોપ અને તે ટર્ન સુધીની નોર્મલાઇઝ્ડ OpenAI-ફોર્મેટ ટ્રાન્સક્રિપ્ટનું ડાઇજેસ્ટ બનાવે છે, કારણ કે `tools` હાજર હોય ત્યારે DeepSeek ને અગાઉના _દરેક_ ટર્નનું રીઝનિંગ જરૂરી હોય છે. Responses-API લક્ષ્યો માટે (ઉદાહરણ તરીકે `opencode-go/deepseek-v4-flash`, જેને `/responses` પર રાઉટ કરવામાં આવે છે) અપસ્ટ્રીમ બૉડીમાં `messages` નહીં પરંતુ `input` હોય છે, તેથી `translateRequest()` (`open-sse/translator/index.ts`) કૉલબૅક વિકલ્પ દ્વારા તેણે ડાઇજેસ્ટ કરેલી પિવટ ટ્રાન્સક્રિપ્ટની જાણ કરે છે અને કૅપ્ચર સાઇટ્સ એ જ ટ્રાન્સક્રિપ્ટનું ડાઇજેસ્ટ બનાવે છે. Responses રીપ્લે પાસ દરેક સ્રોત ફોર્મેટ માટે OpenAI પિવટ પર ચાલે છે, તેથી Anthropic Messages ક્લાયન્ટ્સ (Claude → OpenAI → Responses) માટે પણ રીપ્લે થાય છે.
 
 ## સ્ટોરેજ — હાઇબ્રિડ મેમરી + SQLite
 
@@ -72,7 +74,7 @@ CREATE TABLE IF NOT EXISTS reasoning_cache (
 );
 ```
 
-ઇન્ડેક્સ: `expires_at`, `provider`, `model`, `created_at`. `expires_at` ને Unix epoch સેકન્ડ્સ તરીકે સંગ્રહિત કરવામાં આવે છે; SELECT સ્તર લેગસી ટેક્સ્ટ મૂલ્યોને `EXPIRES_AT_EPOCH_SQL` મારફતે નૉર્મલાઇઝ કરે છે.
+ઇન્ડેક્સ: `expires_at`, `provider`, `model`, `created_at`. `expires_at` ને Unix epoch સેકન્ડ તરીકે સંગ્રહિત કરવામાં આવે છે; SELECT સ્તર લેગસી ટેક્સ્ટ મૂલ્યોને `EXPIRES_AT_EPOCH_SQL` મારફતે સામાન્યકૃત કરે છે.
 
 ## પ્રદાતા / મોડલ શોધ
 

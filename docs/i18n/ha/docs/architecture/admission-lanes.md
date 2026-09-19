@@ -7,48 +7,52 @@
 OmniRoute yana da tsarin layuka na cikin-process guda **biyu** masu iyakoki daban-daban. Suna
 cika juna; ya kamata masu gudanarwa su san wanne ne suke dubawa.
 
-## 1. Karɓar bayanai a matakin byte na faɗin process (`chatBodyAdmission.ts`)
+## 1. Karɓar bayanai a matakin byte ga ɗaukacin tsari (`chatBodyAdmission.ts`)
 
 - **Iyaka:** hanyar buffered-body/heap don `POST /v1/chat/completions`,
-  `/v1/messages`, `/v1/responses`, da sauran hanyoyi masu tsarin chat. Yana
-  karewa daga faɗaɗa amfani da heap sakamakon manyan bodies na coding-agent (#4380).
-- **Controller guda ɗaya na gaba ɗaya ga process, ba layuka na kowane key ba (#10110).** Kowane API key
-  (wanda aka yi hash) ko zaman `anonymous` yana neman izinin shiga ne bisa **kasafi guda ɗaya**
-  da kowa ke amfani da shi — ana amfani da hashed session id ne KAWAI a matsayin key na tsara
-  adalci (rarraba masu jira ta round-robin), ba a taɓa amfani da shi a matsayin rarrabuwar
-  capacity ba. Wata sigar da ta gabata ta wannan doc ta bayyana layuka na kowane key masu
-  capacity mai zaman kansa; an cire wannan tsarin a #10110 saboda yana ba wa bayanan shaidar
-  bogi marasa tantancewa damar ninka iyakar faɗin process.
-- **Ƙofa (#503-fanout): kasafin BYTE na ingest da ake ƙirƙira ta atomatik, ba tsayayyen adadin
-  requests ba.** Tsohon iyakar adadin requests ta `CHAT_MAX_HEAVY_IN_FLIGHT` (default `1`
+  `/v1/messages`, `/v1/responses`, da sauran hanyoyi masu tsarin chat. Tana karewa
+  daga ƙaruwar amfani da heap sakamakon manyan bodies na coding-agent (#4380).
+- **Mai sarrafawa guda ɗaya na gabaɗayan tsari, ba lanes na kowane key ba (#10110).** Kowane API key
+  (wanda aka yi wa hash) ko zaman `anonymous` yana neman izinin shiga daga **kasafin kuɗi ɗaya**
+  da kowa ke amfani da shi — ana amfani da hashed session id NE KAWAI a matsayin key na tsara adalci
+  (rarraba waiters bi-da-bi), ba a taɓa amfani da shi a matsayin shard na capacity ba. Wata sigar baya ta wannan
+  daftari ta bayyana lanes na kowane key masu capacity masu zaman kansu; an cire wannan tsarin
+  a #10110 saboda yana ba wa fake credentials marasa authentication damar ninka
+  iyakar gabaɗayan tsari.
+- **Ƙofa (#503-fanout): kasafin BYTE na ingest da ake samarwa ta atomatik, ba ƙayyadadden adadin requests
+  ba.** Tsohon iyakar adadin requests ta `CHAT_MAX_HEAVY_IN_FLIGHT` (default `1`
   kafin wannan gyaran) ta durƙusar da fan-out na coding-agent (subagents/CLIs da yawa,
-  bodies waɗanda akai-akai suke > 256 KB) zuwa ingantaccen concurrency na kusan ~1, wanda
-  ya haifar da 503 a ƙarƙashin load na yau da kullum. Yanzu yana aiki ne kawai idan mai gudanarwa
-  ya saita `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` a sarari. Idan ba a saita shi ba, maimakon haka
-  ana sarrafa karɓar bayanai da `OMNIROUTE_CHAT_MAX_INFLIGHT_BYTES` — kasafin da ake ƙirƙira
-  ta atomatik daga ainihin iyakar memory na process (`src/shared/middleware/admissionBudget.ts`):
-  25% na mafi ƙanƙanta tsakanin iyakar V8 heap da duk wani iyakar cgroup/container,
-  sannan a raba da ma’aunin transient-amplification na 8x, tare da taƙaita shi tsakanin 8 MiB da
-  2 GiB. Explicit overrides suna amfani da waɗannan clamps ɗin. Wannan yana daidaita kansa daga
-  container mai 512 MB zuwa desktop mai 32 GB ba tare da daidaita env ba. Body da ba zai iya
-  shiga cikin ingantaccen kasafin ba zai gaza nan take da `413 body_exceeds_budget`;
-  gasa tsakanin bodies waɗanda kowannensu za a iya sarrafawa ce kawai take shiga layin
-  adalci mai iyaka. Live multi-signal resource-pressure tracker (V8 heap ratio,
+  bodies masu wuce 256 KB a kai a kai) zuwa effective concurrency na ~1, wanda ke haifar da 503
+  ƙarƙashin load na yau da kullum. Yanzu tana aiki ne kawai idan operator ya saita
+  `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` kai tsaye. Idan ba a saita ta ba, maimakon haka
+  `OMNIROUTE_CHAT_MAX_INFLIGHT_BYTES` ce ke sarrafa admission — kasafin da ake samarwa ta atomatik daga
+  ainihin iyakar memory ta process (`src/shared/middleware/admissionBudget.ts`):
+  25% na mafi ƙanƙanta tsakanin iyakar V8 heap da kowace iyakar cgroup/container,
+  a raba da transient-amplification factor na 8x, sannan a taƙaita tsakanin 8 MiB da
+  2 GiB. Explicit overrides suna amfani da clamps iri ɗaya. Wannan yana daidaita kansa daga
+  container mai 512 MB zuwa desktop mai 32 GB ba tare da env tuning ba. Body da ba zai iya
+  shiga cikin effective budget ba zai gaza nan take da `413 body_exceeds_budget`;
+  fafatawa tsakanin bodies waɗanda kowannensu za a iya sarrafawa ce kawai ke shiga bounded
+  fairness queue. Live multi-signal resource-pressure tracker (V8 heap ratio,
   cgroup, PSI, OOM events — `open-sse/utils/resourcePressurePolicy.ts`) yana rage
-  iyakantaccen lokacin jira a ƙarƙashin matsin `high`, kuma yana watsarwa nan take da
-  `503 resource_pressure` a ƙarƙashin matsin `critical`, tun kafin a ingest kowane bytes.
+  bounded wait a ƙarƙashin matsin `high`, kuma yana watsarwa nan take da
+  `503 resource_pressure` a ƙarƙashin matsin `critical`, tun kafin a ingest ko byte ɗaya.
+  Ana karanta PSI daga `memory.pressure` na cgroup na wannan unit idan yana nan
+  (`open-sse/utils/resourcePressureSampler.ts`); `/proc/pressure/memory` ya shafi
+  duk host kuma fallback ne kawai a bare metal / cgroup v1, don haka host da ke yin swapping
+  ba zai iya mayar da 503 ga container da ba ya aiki ba.
 - **Daidaitawa:**
-  - `OMNIROUTE_CHAT_MAX_INFLIGHT_BYTES` — override na kasafin byte da ake ƙirƙira ta atomatik
+  - `OMNIROUTE_CHAT_MAX_INFLIGHT_BYTES` — override na kasafin byte da ake samarwa ta atomatik
   - `OMNIROUTE_CHAT_MAX_HEAVY_IN_FLIGHT` — tsohon iyakar adadin requests, opt-in kawai
-  - `OMNIROUTE_CHAT_ADMISSION_QUEUE_MS` — jiran layi kafin 503 (default 2000)
-  - `OMNIROUTE_CHAT_ADMISSION_MAX_QUEUED_BYTES` — bawul ɗin heap na queued-bytes (default 4 MB)
-  - `OMNIROUTE_CHAT_VIRTUAL_TTL_MS` / `OMNIROUTE_CHAT_VIRTUAL_MAX_SESSIONS` — an daina
-    amfani da su kuma no-ops ne tun daga #10110 (ana karɓarsu don dacewa da config, amma ana watsi da su)
+  - `OMNIROUTE_CHAT_ADMISSION_QUEUE_MS` — lokacin jiran queue kafin 503 (default 2000)
+  - `OMNIROUTE_CHAT_ADMISSION_MAX_QUEUED_BYTES` — queued-bytes heap valve (default 4 MB)
+  - `OMNIROUTE_CHAT_VIRTUAL_TTL_MS` / `OMNIROUTE_CHAT_VIRTUAL_MAX_SESSIONS` — deprecated
+    no-ops tun daga #10110 (ana karɓarsu don config compatibility, amma ana watsi da su)
 - **Rahotanni:** `GET /api/monitoring/health` → `chatAdmission` (#11244) — ciki har da
   ƙarin abubuwan #503-fanout: `inflightBytes`, `maxInflightBytes`, `budgetSource`
   (`v8_heap` | `cgroup` | `override`), `pressureSeverity`, da `countCapEnabled`
   (false a default deployment — yana tabbatar da cewa kasafin byte ne, ba tsohon
-  count cap ba, yake aiki a zahiri).
+  count cap ba, ke ƙuntatawa a zahiri).
 
 ## 2. Layukan kama-da-wane masu daidaitawa a lokacin aiki (`open-sse/services/admission`)
 

@@ -86,6 +86,7 @@ export const OPENAI_RESPONSES_ERROR_FRAME = ENCODER.encode(
     code: null,
     message: "Upstream stream failed before completion.",
     param: null,
+    sequence_number: 0,
   })}\n\n`
 );
 
@@ -124,7 +125,7 @@ function buildResponsesErrorDataLine(text: string): string {
     parsed && typeof parsed.diagnostics === "object" && parsed.diagnostics !== null
       ? { diagnostics: parsed.diagnostics }
       : {};
-  return JSON.stringify({ type: "error", code, message, param, ...extras });
+  return JSON.stringify({ type: "error", code, message, param, sequence_number: 0, ...extras });
 }
 
 export type EarlyStreamKeepaliveOptions = {

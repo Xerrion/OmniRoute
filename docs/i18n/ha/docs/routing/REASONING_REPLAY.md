@@ -19,25 +19,27 @@ Siga Ba Daidai Ba: Dole ne a mayar da reasoning_content na yanayin tunani zuwa g
 
 Amma abokan ciniki na yau da kullum (Cursor, Cline, Roo Code, OpenAI SDK) suna cire `reasoning_content` daga tarihin da suke sake aikawa. OmniRoute yana maido da shi daga ma'ajiyar wucin gadi ta gefen uwar garke domin buƙatar da sabis na sama yake gani ta kasance daidaitacciya. Batu #1628 ya gabatar da adanawar haɗin ƙwaƙwalwa/SQLite domin ma'ajiyar wucin gadi ta ci gaba da kasancewa bayan sake kunna tsarin.
 
-## Tsarin Gini
+## Tsarin Gine-gine
 
 ```
-Zagaye N (mataimaki yana samarwa):
-  → amsa tana ƙunshe da reasoning_content + tool_calls
+Zagaye na N (mataimaki yana samarwa):
+  → amsa tana ɗauke da reasoning_content + tool_calls
   → idan requiresReasoningReplay(provider, model): cacheReasoningFromAssistantMessage()
       yana rubutawa (ƙwaƙwalwa + DB), tare da amfani da kowane tool_call.id a matsayin maɓalli
-  → aika amsar zuwa abokin ciniki (wanda zai iya riƙe tunanin ko kuma kada ya riƙe shi)
+  → aika amsa zuwa ga abokin ciniki (wanda zai iya ko ba zai iya riƙe reasoning ba)
 
-Zagaye N+1 (abokin ciniki yana aika buƙatar ci gaba):
+Zagaye na N+1 (abokin ciniki yana aika saƙon biyo baya):
   → mai fassara yana gano: requiresReasoningReplay(provider, model) === true
-  → ga kowane saƙon mataimaki mai tool_calls amma ba shi da reasoning_content:
+  → ga kowane saƙon mataimaki mai tool_calls kuma marar reasoning_content:
       lookupReasoning(toolCalls[0].id) → ƙwaƙwalwa → DB
       an samu  → msg.reasoning_content = cached; recordReplay()
       ba a samu ba → msg.reasoning_content = "" (madadin tsohon tsari don tsofaffin nau'ikan DeepSeek)
-  → sabis na sama yana ganin daidaitaccen tarihi → babu 400
+  → tsarin sama yana ganin daidaitaccen tarihi → babu 400
 ```
 
-Ana ɗaukar bayanan a `open-sse/handlers/chatCore.ts` (wurare biyu, a wuraren kiran `cacheReasoningFromAssistantMessage` guda biyu). Ana sake amfani da su a `open-sse/translator/index.ts` bayan tilasta daidaiton tsarin bayanai amma kafin aikawa.
+Ana yin kamawa a cikin `open-sse/handlers/chatCore.ts` (a wurare biyu, a wuraren kiran `cacheReasoningFromAssistantMessage` guda biyu). Ana yin sake kunnawa a cikin `open-sse/translator/index.ts` bayan tilasta daidaiton tsari amma kafin aikawa.
+
+Zagayen mataimaki na yau da kullum (marasa kiran kayan aiki) suna amfani da maɓalli ta wata hanya dabam: `buildAssistantMessageCacheKey()` yana samar da digest na iyakar zaman tare da rubutaccen tarihin tattaunawa na tsarin OpenAI da aka daidaita har zuwa wannan zagayen, saboda DeepSeek yana buƙatar reasoning na _kowane_ zagayen da ya gabata da zarar `tools` yana nan. Ga wuraren da Responses-API ke nufa (misali `opencode-go/deepseek-v4-flash`, wanda ake bi da shi zuwa `/responses`) jikin buƙatar da ake aikawa zuwa tsarin sama yana ɗauke da `input`, ba `messages` ba, don haka `translateRequest()` (`open-sse/translator/index.ts`) yana bayar da rahoton rubutaccen tarihin pivot da ya samar masa da digest ta hanyar zaɓin callback, sannan wuraren kamawa su samar da digest na wannan rubutaccen tarihin iri ɗaya. Matakin sake kunnawa na Responses yana gudana a kan pivot na OpenAI ga kowane tsarin tushe, don haka ana sake kunna abokan cinikin Anthropic Messages (Claude → OpenAI → Responses) su ma.
 
 ## Adanawa — Haɗin Ƙwaƙwalwa + SQLite
 

@@ -220,35 +220,37 @@ docker run -d \
 10. **`env` વિકલ્પ મારફતે `exec()` / `spawn()` runtime મૂલ્યો** — બાહ્ય પાથ અથવા અવિશ્વસનીય મૂલ્યોને shell મારફતે પસાર થતી સ્ક્રિપ્ટ્સમાં ક્યારેય string-interpolate ન કરો. સંદર્ભ: `src/mitm/cert/install.ts::updateNssDatabases`.
 11. **સુરક્ષિત-બાય-ડિફૉલ્ટ લાઇબ્રેરીઓને પ્રાધાન્ય આપો** — [tldrsec/awesome-secure-defaults](https://github.com/tldrsec/awesome-secure-defaults) જુઓ (Helmet.js, DOMPurify, ssrf-req-filter, safe-regex, Google Tink). પોતાનું સોલ્યુશન બનાવતાં પહેલાં તેમનો ઉપયોગ કરો.
 
-## સપ્લાય-ચેઇન સ્કેનરના તારણો (Socket.dev / Snyk / સમાન)
+## સપ્લાય-ચેઇન સ્કેનરનાં તારણો (Socket.dev / Snyk / સમાન)
 
-પ્રકાશિત `omniroute` npm આર્ટિફેક્ટ Next.js `output: "standalone"`
-બિલ્ડને બંડલ કરે છે, જેનો અર્થ એ છે કે દરેક રૂટ હેન્ડલર — જેમાં દસ્તાવેજીકૃત વિશેષાધિકારયુક્ત
-સુવિધાઓ (MITM, Zed ઇમ્પોર્ટ, Cloud Sync, એમ્બેડેડ સર્વિસ સુપરવાઇઝર) પણ સામેલ છે — અંતે
-`.next/server/*.js` મિનિફાઇડ ચંક્સમાં સમાવિષ્ટ થાય છે. હ્યુરિસ્ટિક સપ્લાય-ચેઇન સ્કેનરો
-વારંવાર આ ચંક્સને માલવેર સિગ્નેચર્સ સાથે પેટર્ન-મૅચ કરે છે.
+> **કાર્યક્ષેત્ર નોંધ:** રિપોઝિટરીના રૂટ પરની `socket.yml` ફક્ત પ્રકાશિત npm આર્ટિફેક્ટના Socket.devના રજિસ્ટ્રી-સાઇડ પોસ્ટ-પબ્લિશ સ્કેન માટે `projectIgnorePaths`ને આકાર આપે છે — તે અમલમાં મૂકાયેલ CI/PR મર્જ ગેટ નથી. `.github/workflows`માં કોઈ workflow, `package.json`માં કોઈ script અને કોઈ `Makefile` target Socket.devને ચલાવતું નથી.
 
-અમે ઉપયોગ કરીએ છીએ તે સ્કેનર કૉન્ફિગરેશન રિપોઝિટરીના રૂટમાં
-[`socket.yml`](socket.yml) ખાતે છે (Socket.dev GitHub App ફોર્મેટ v2 — જુઓ
-<https://docs.socket.dev/docs/socket-yml>). તે સ્પષ્ટ રીતે વિતરિત ન થતી
-ડિરેક્ટરીઓ (`tests/`, `_tasks/`, `_references/`, `_ideia/`,
-`_mono_repo/`, `docs/`, વગેરે)ને બાકાત રાખે છે, જેથી સ્કેનર માત્ર એવા કોડ પાથ વિશે
-રિપોર્ટ કરે છે જે વાસ્તવમાં પ્રકાશિત પૅકેજના વપરાશકર્તાઓ સુધી પહોંચે છે — સ્કેન પોતે આ
-ફાઇલ વાંચતી Socket GitHub App દ્વારા ચલાવવામાં આવે છે, આ રિપોઝિટરીના કોઈ વર્કફ્લો દ્વારા નહીં.
+પ્રકાશિત `omniroute` npm આર્ટિફેક્ટ Next.jsનું `output: "standalone"`
+બિલ્ડ બંડલ કરે છે, જેનો અર્થ એ છે કે દરેક route handler — દસ્તાવેજીકૃત વિશેષાધિકૃત
+સુવિધાઓ (MITM, Zed import, Cloud Sync, એમ્બેડેડ service supervisor) સહિત —
+`.next/server/*.js`ની minified chunksમાં સમાવિષ્ટ થાય છે. હ્યુરિસ્ટિક સપ્લાય-ચેઇન સ્કેનર્સ
+વારંવાર તે chunksને માલવેર signatures સાથે pattern-match કરે છે.
 
-દરેક તારણ શ્રેણી માટે અમે દરેક તારણ દીઠ મેઇન્ટેનર પ્રમાણન જાળવીએ છીએ:
+અમે ઉપયોગ કરીએ છીએ તે સ્કેનર configuration રિપોઝિટરીના રૂટમાં
+[`socket.yml`](socket.yml) ખાતે છે (Socket.dev GitHub App format v2 — જુઓ
+<https://docs.socket.dev/docs/socket-yml>). તે સ્પષ્ટપણે વિતરણ ન થતી
+directories (`tests/`, `_tasks/`, `_references/`, `_ideia/`,
+`_mono_repo/`, `docs/`, વગેરે)ને બાકાત રાખે છે, જેથી સ્કેનર માત્ર એવા code paths અંગે
+રિપોર્ટ કરે જે ખરેખર પ્રકાશિત વપરાશકર્તાઓ સુધી પહોંચે છે — સ્કેન પોતે આ રિપોઝિટરીમાંના
+workflow દ્વારા નહીં, પરંતુ તે ફાઇલ વાંચતી Socket GitHub App દ્વારા ચલાવવામાં આવે છે.
+
+દરેક તારણની શ્રેણી માટે અમે તારણ-દીઠ maintainer attestation જાળવીએ છીએ:
 
 - **[`docs/security/SOCKET_DEV_FINDINGS.md`](docs/security/SOCKET_DEV_FINDINGS.md)** —
-  દરેક તારણનો નકશો: સોર્સ ફાઇલ ↔ ફ્લૅગ કરાયેલ ચંક ↔ વર્તન ↔
-  v3.8.6માં લાગુ કરાયેલ નિવારણ.
-- દરેક ફ્લૅગ કરાયેલ ફંક્શન પરના ઇન-સોર્સ `SECURITY-AUDITOR-NOTE:` બ્લૉક્સ
-  એ જ દસ્તાવેજ તરફ નિર્દેશ કરે છે.
+  તારણ-દીઠ નકશો: source file ↔ ધ્વજાંકિત chunk ↔ વર્તણૂક ↔ v3.8.6માં
+  લાગુ કરાયેલ mitigation.
+- દરેક ધ્વજાંકિત function પરના in-source `SECURITY-AUDITOR-NOTE:` blocks
+  એ જ દસ્તાવેજ તરફ સંદર્ભ આપે છે.
 
-જે વપરાશકર્તાઓની પાઇપલાઇન આ ચેતવણીને શિથિલ કરી શકતી નથી તેમના માટે:
-`OMNIROUTE_BUILD_PROFILE=minimal npm run build` વડે બિલ્ડ કરો. આ ચાર
-સંવેદનશીલ મોડ્યુલોને એવા સ્ટબ્સથી બદલે છે જે રનટાઇમ પર HTTP 503
-`feature-disabled` પરત કરે છે, જેથી વિશેષાધિકારયુક્ત કોડ પાથ બંડલમાં ભૌતિક રીતે
-હાજર રહેતા નથી. પ્રકાશન પ્રક્રિયા માટે
+જે વપરાશકર્તાઓની pipeline alertને શિથિલ કરી શકતી નથી તેમના માટે:
+`OMNIROUTE_BUILD_PROFILE=minimal npm run build` વડે build કરો. આ ચાર
+સંવેદનશીલ modulesને એવા stubsથી બદલે છે જે runtime પર HTTP 503
+`feature-disabled` પરત કરે છે, જેથી વિશેષાધિકૃત code paths bundleમાંથી ભૌતિક રીતે
+ગેરહાજર રહે છે. પ્રકાશન પ્રક્રિયા માટે
 [`docs/security/SOCKET_DEV_FINDINGS.md`](docs/security/SOCKET_DEV_FINDINGS.md)
 જુઓ.
 

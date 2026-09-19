@@ -221,32 +221,21 @@ Kayan aiki da masu bitar lamba suna tilasta waɗannan ƙa'idoji:
 
 ## Sakamakon na’urar binciken sarkar samarwa (Socket.dev / Snyk / makamantansu)
 
-Kundin npm na `omniroute` da aka wallafa yana ƙunshe da ginin Next.js mai `output: "standalone"`,
-wanda ke nufin cewa kowane mai kula da hanya — ciki har da fasalolin da aka rubuta
-masu gata na musamman (MITM, shigarwar Zed, Cloud Sync, mai kula da sabis da aka saka ciki) — yana
-ƙarewa a cikin gutsattsarin `.next/server/*.js` da aka matse. Na’urorin binciken sarkar samarwa
-masu amfani da dabarun hasashe sukan daidaita tsarin waɗannan gutsattsarin da sa hannun malware.
+> **Bayanin iyaka:** `socket.yml` da ke tushen ma’ajiyar lamba yana tsara `projectIgnorePaths` ne kawai don binciken bayan-wallafa na Socket.dev a bangaren rajista kan artefakt ɗin npm da aka wallafa — ba ƙa’idar tilasta haɗewar CI/PR ba ce. Babu wani workflow a `.github/workflows`, babu script na `package.json`, kuma babu target na `Makefile` da ke kiran Socket.dev.
 
-Tsarin saitin na’urar binciken da muke amfani da shi yana cikin [`socket.yml`](socket.yml) a tushen
-ma’ajiyar lambar (tsarin Socket.dev GitHub App v2 — duba
-<https://docs.socket.dev/docs/socket-yml>). A sarari yana ware
-kundin adireshi waɗanda ba a tura su (`tests/`, `_tasks/`, `_references/`, `_ideia/`,
-`_mono_repo/`, `docs/`, da sauransu) domin na’urar binciken ta bayar da rahoto kawai kan hanyoyin lambar da
-a zahiri suke kaiwa ga masu amfani da abin da aka wallafa — Socket
-GitHub App ne ke gudanar da binciken ta hanyar karanta wannan fayil, ba wani workflow a wannan ma’ajiya ba.
+Artefakt ɗin npm na `omniroute` da aka wallafa yana ƙunshe da build ɗin Next.js mai `output: "standalone"`, wanda ke nufin kowane mai sarrafa route — ciki har da fasalolin da aka rubuta bayanansu masu buƙatar gata (MITM, shigo da Zed, Cloud Sync, da mai kula da sabis da aka haɗa ciki) — yana ƙarewa a cikin ƙananan chunks na `.next/server/*.js` da aka matse. Na’urorin binciken sarkar samarwa masu amfani da kimantawa sukan daidaita tsarin waɗannan chunks da sa hannun malware akai-akai.
 
-Ga kowane rukuni na sakamakon bincike muna adana takardar shaidar mai kula da aikin ta musamman ga kowane sakamako:
+Tsarin na’urar binciken da muke amfani da shi yana cikin [`socket.yml`](socket.yml) a tushen ma’ajiyar lambar (tsarin Socket.dev GitHub App v2 — duba
+<https://docs.socket.dev/docs/socket-yml>). A sarari yake ware kundin adireshin da ba a tura su ba (`tests/`, `_tasks/`, `_references/`, `_ideia/`, `_mono_repo/`, `docs/`, da sauransu) domin na’urar binciken ta bayar da rahoto kawai kan hanyoyin lambar da suke isa ga masu amfani da aka wallafa musu — Socket GitHub App da ke karanta wannan fayil ne ke tafiyar da binciken kansa, ba wani workflow a wannan ma’ajiyar lamba ba.
+
+Ga kowane rukuni na abin da aka gano, muna adana shaidar mai kula da tsarin ga kowane sakamakon bincike:
 
 - **[`docs/security/SOCKET_DEV_FINDINGS.md`](docs/security/SOCKET_DEV_FINDINGS.md)** —
-  taswira ta kowane sakamako: fayil ɗin tushe ↔ gutsattsarin da aka yi wa alama ↔ ɗabi’a ↔ matakin rage haɗari
-  da aka aiwatar a v3.8.6.
-- Tubalan `SECURITY-AUDITOR-NOTE:` da ke cikin lambar tushe a kowace function da aka yi wa alama
-  suna mayar da mai karatu zuwa wannan takarda.
+  taswirar kowane sakamakon bincike: fayil ɗin tushe ↔ chunk da aka yi wa alama ↔ ɗabi’a ↔ matakin rage haɗari da aka aiwatar a v3.8.6.
+- Tubalan `SECURITY-AUDITOR-NOTE:` da ke cikin lambar tushe a wurin kowane function da aka yi wa alama suna mayar da mai dubawa zuwa wannan takarda.
 
-Ga masu amfani waɗanda pipeline ɗinsu ba zai iya sassauta faɗakarwar ba: yi gini da
-`OMNIROUTE_BUILD_PROFILE=minimal npm run build`. Wannan yana maye gurbin modules huɗu
-masu muhimmanci da stubs waɗanda ke mayar da HTTP 503 `feature-disabled` yayin
-gudanarwa, don haka hanyoyin lambar masu gata na musamman ba sa kasancewa a zahiri cikin kundin.
+Ga masu amfani waɗanda pipeline ɗinsu ba zai iya sassauta faɗakarwar ba: yi build da
+`OMNIROUTE_BUILD_PROFILE=minimal npm run build`. Wannan yana maye gurbin modules huɗu masu muhimmanci da stubs waɗanda ke mayar da HTTP 503 `feature-disabled` a lokacin aiki, don haka hanyoyin lambar masu buƙatar gata ba sa kasancewa a zahiri cikin bundle ɗin.
 Duba [`docs/security/SOCKET_DEV_FINDINGS.md`](docs/security/SOCKET_DEV_FINDINGS.md)
 don tsarin wallafawa.
 

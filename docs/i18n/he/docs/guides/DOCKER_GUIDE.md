@@ -27,6 +27,12 @@
 
 ## הפעלה מהירה
 
+> **אירוח עצמי בפקודה אחת?** עיינו
+> [במדריך לאירוח עצמי](../getting-started/SELF_HOST_GUIDE.md) —
+> `docker compose -f docker-compose.selfhost.yml up -d` (image שפורסם +
+> Redis, גישה מקומית בלבד, ללא בחירת פרופיל). ההפעלה המהירה שלהלן היא
+> המסלול המבוסס על קונטיינר יחיד עבור משתמשים שכבר מפעילים Redis במקום אחר.
+
 ```bash
 docker run -d \
   --name omniroute \

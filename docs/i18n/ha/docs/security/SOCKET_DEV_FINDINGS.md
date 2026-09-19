@@ -4,20 +4,22 @@
 
 ---
 
+> **Bayanin iyaka:** `socket.yml` yana saita binciken bayan-wallafa na ɓangaren registry na Socket.dev kan npm artifact (ignore-paths don abubuwan da ba a tura su tare da kunshin ba kamar `tests/`, `docs/`, da rahotannin build). Ba ya kafa wata CI/PR merge gate — babu workflow a cikin `.github/workflows`, babu script na `package.json`, kuma babu target na `Makefile` da ke kiran Socket.dev.
+
 Wannan takarda ita ce shaidar da mai kula da aikin ya rubuta game da sakamakon bincike guda shida na
-`AI-detected potential malware` da aka bayyana game da `omniroute@3.8.5` da kuma
-matakan kariya da aka aiwatar a `omniroute@3.8.6`. An samar da ita ne domin:
+`AI-detected potential malware` da aka nuna a kan `omniroute@3.8.5`, da kuma
+matakan rage haɗarin da aka aiwatar a cikin `omniroute@3.8.6`. An ƙirƙire ta domin:
 
-1. Masu gudanar da tsarin tsaro su sami tushe guda ɗaya da za su iya ambata lokacin da suke buƙatar
-   tantance sakamakon binciken bisa ainihin lambar tushe.
-2. Na'urorin binciken AI na gaba su iya gano ikirarin da mai kula da aikin ya sanya wa hannu cewa kowace
-   hanyar da aka yi wa alama ganganci ce, sai an zaɓi amfani da ita, kuma an rubuta bayaninta.
-3. Mu sami rubutaccen tarihin _dalilin da ya sa_ aka tsara kowane wurin kira yadda yake —
-   domin sake fasalin lamba a nan gaba kada ya sake shigar da wata alamar ganewa da
-   aka cire da gangan.
+1. Masu gudanar da tsarin tsaro su sami madogara guda ɗaya da za su ambata lokacin da suke buƙatar
+   tantance sakamakon binciken bisa ainihin source.
+2. Na’urorin binciken AI na gaba su iya gano ikirarin da mai kula da aikin ya sanya wa hannu cewa kowace
+   path da aka yi wa alama an yi ta ne da gangan, sai an zaɓi amfani da ita, kuma an rubuta bayaninta.
+3. Mu kasance da rubutaccen tarihin _dalilin da ya sa_ aka tsara kowane call site ta wannan hanya —
+   domin kada wani refactor na gaba ya sake shigar da fingerprint da
+   aka cire da gangan bisa kuskure.
 
-Idan kuna gudanar da na'urar bincike da ta sake yi wa ɗaya daga cikin wuraren kiran da ke ƙasa alama bayan an
-fitar da matakan kariya na v3.8.6, da fatan za ku buɗe batu tare da bayanan sawun binciken kuma
+Idan kuna gudanar da na’urar bincike wadda ta sake yi wa ɗaya daga cikin call sites da ke ƙasa alama bayan an
+fitar da matakan rage haɗarin na v3.8.6, da fatan za ku buɗe issue tare da scan trace ɗin, kuma
 za mu faɗaɗa shaidar a nan.
 
 ---

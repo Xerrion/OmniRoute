@@ -70,14 +70,22 @@ Saita waɗannan a cikin muhallin tsarin OmniRoute (daemon ɗin, misali ta Launch
 
 Lokacin da ka gudanar da `npm install -g omniroute`, za ka iya ganin tarin gargadi kamar `npm warn ERESOLVE`, sanarwar peer-dependency, da saƙonnin `deprecated`. **Ana tsammanin waɗannan kuma ba su da illa.** Shigarwar ta yi nasara idan ka ga `added <N> packages` a cikin sakamakon.
 
-Gargadin suna fitowa ne daga tsofaffin kewayon peer-dependency a cikin fakitin wasu ɓangarori waɗanda OmniRoute ba ya sarrafawa:
+Don ɓoye gargadin warware peer-dependency, yi amfani da hanyar shigarwa da OmniRoute ke tallafawa:
 
-1. **`marked-terminal` yana buƙatar `marked >=1 <16`, amma an sami `marked@18`** — yana aiki da kyau a aikace; kewayon peer na upstream ne kawai ya tsufa.
-2. **`deprecated prebuild-install@7.1.3`** — mataimaki ne na samun native-binary wanda aka samo ta wata dogara. Ba a
-   amfani da shi wajen shigar da transport binding na `wreq-js` da aka kayyade, kuma ba ya nuna cewa saitin jigilar
-   mai samar da web-cookie ya gaza.
+```bash
+npm install -g omniroute --legacy-peer-deps
+```
 
-**Ba a buƙatar wani mataki** — ba za a iya kashe gargadin gaba ɗaya ba sai an yi fork na fakitin upstream.
+`--legacy-peer-deps` yana ɓoye `ERESOLVE` da sanarwar peer-dependency ne kawai. Sanarwar daina tallafawa za ta ci gaba da bayyana saboda tana fitowa daga fakitin ɓangare na uku masu dogaro kai tsaye ko a kaikaice; ba ta nuna cewa shigarwar ta gaza ba.
+
+Gargadin yana fitowa ne daga tsofaffin jeren sigar peer-dependency a cikin fakitin ɓangare na uku waɗanda OmniRoute ba ya sarrafawa:
+
+1. **`marked-terminal` yana buƙatar `marked >=1 <16`, amma an samu `marked@18`** — yana aiki da kyau a zahiri; kawai dai jeren sigar peer na asalin fakitin ya tsufa.
+2. **`deprecated prebuild-install@7.1.3`** — kayan taimako ne na ɗauko native-binary mai dogaro a kaikaice. Ba a
+   amfani da shi wajen shigar da haɗin transport na `wreq-js` da aka ƙayyade sigarsa, kuma ba ya nuna cewa saitin transport
+   na mai samar da web-cookie ya gaza.
+
+**Ba a buƙatar wani mataki** — ba za a iya ɓoye gargadin gaba ɗaya ba sai an yi fork na fakitin asali.
 
 ---
 

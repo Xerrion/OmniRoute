@@ -27,6 +27,12 @@
 
 ## Gudanarwa Cikin Sauri
 
+> **Kana son ka karɓi baƙuncin tsarin da kanka da umarni guda?** Duba
+> [Jagorar Karɓar Baƙuncin Tsarin da Kanka](../getting-started/SELF_HOST_GUIDE.md) —
+> `docker compose -f docker-compose.selfhost.yml up -d` (hoton da aka wallafa +
+> Redis, loopback kawai, babu zaɓin profile). Gudanarwa Cikin Sauri da ke ƙasa ita ce
+> hanyar container guda ɗaya ga masu amfani waɗanda tuni suke gudanar da Redis a wani wuri.
+
 ```bash
 docker run -d \
   --name omniroute \

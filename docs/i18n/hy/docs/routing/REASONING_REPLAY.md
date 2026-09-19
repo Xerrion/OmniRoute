@@ -22,22 +22,24 @@ OmniRoute-ը գրանցում է մտածողության ռեժիմով մոդ�
 ## Ճարտարապետություն
 
 ```
-Փուլ N (օգնականը ստեղծում է).
-  → պատասխանը պարունակում է reasoning_content + tool_calls
-  → եթե requiresReasoningReplay(provider, model): cacheReasoningFromAssistantMessage()
-      գրում է (հիշողություն + DB)՝ որպես բանալի օգտագործելով յուրաքանչյուր tool_call.id
-  → պատասխանը փոխանցում է հաճախորդին (որը կարող է պահպանել կամ չպահպանել հիմնավորումը)
+Turn N (assistant generates):
+  → response contains reasoning_content + tool_calls
+  → if requiresReasoningReplay(provider, model): cacheReasoningFromAssistantMessage()
+      writes (memory + DB), keyed by every tool_call.id
+  → forward response to client (which may or may not retain reasoning)
 
-Փուլ N+1 (հաճախորդն ուղարկում է հաջորդ հարցումը).
-  → փոխակերպիչը հայտնաբերում է՝ requiresReasoningReplay(provider, model) === true
-  → tool_calls ունեցող և reasoning_content չունեցող օգնականի յուրաքանչյուր հաղորդագրության համար.
-      lookupReasoning(toolCalls[0].id) → հիշողություն → DB
-      գտնվել է  → msg.reasoning_content = cached; recordReplay()
-      չի գտնվել → msg.reasoning_content = "" (հետադարձ համատեղելիության տարբերակ հին DeepSeek-ի համար)
-  → վերին մակարդակի ծառայությունը ստանում է հետևողական պատմություն → 400 սխալ չի առաջանում
+Turn N+1 (client sends follow-up):
+  → translator detects: requiresReasoningReplay(provider, model) === true
+  → for each assistant message with tool_calls and no reasoning_content:
+      lookupReasoning(toolCalls[0].id) → memory → DB
+      hit  → msg.reasoning_content = cached; recordReplay()
+      miss → msg.reasoning_content = "" (legacy fallback for older DeepSeek)
+  → upstream sees consistent history → no 400
 ```
 
-Գրանցումը կատարվում է `open-sse/handlers/chatCore.ts`-ում (երկու տեղում՝ `cacheReasoningFromAssistantMessage`-ի կանչման երկու կետերում)։ Կրկին փոխանցումը կատարվում է `open-sse/translator/index.ts`-ում՝ սխեմայի հարկադիր փոխակերպումից հետո, սակայն ուղարկումից առաջ։
+Ֆիքսումը (Capture) կատարվում է `open-sse/handlers/chatCore.ts`-ում (երկու տեղում՝ `cacheReasoningFromAssistantMessage`-ի կանչի երկու կետերում): Վերարտադրումը (Replay) կատարվում է `open-sse/translator/index.ts`-ում՝ սխեմայի ձևափոխումից հետո, բայց մինչև ուղարկելը (dispatch):
+
+Պարզ (առանց գործիքի կանչի) ասիստենտի քայլերը (turns) նույնականացվում են այլ կերպ. `buildAssistantMessageCacheKey()`-ը մշակում է սեսիայի շրջանակը գումարած OpenAI ձևաչափով նորմալացված տեքստը (transcript) մինչև այդ քայլը, քանի որ DeepSeek-ը պահանջում է _բոլոր_ նախորդ քայլերի տրամաբանությունը (reasoning), հենց որ առկա են `tools`-ները: Responses-API թիրախների համար (օրինակ՝ `opencode-go/deepseek-v4-flash`, որը ուղղորդվում է դեպի `/responses`), վերին հոսքի (upstream) մարմինը պարունակում է `input`, այլ ոչ թե `messages`, ուստի `translateRequest()`-ը (`open-sse/translator/index.ts`) հաղորդում է հենակետային (pivot) տեքստը, որը մշակել է հետկանչի (callback) տարբերակի միջոցով, և ֆիքսման կետերը մշակում են նույն տեքստը: Responses-ի վերարտադրման փուլն աշխատում է OpenAI-ի հենակետի վրա յուրաքանչյուր ելնային ձևաչափի համար, այնպես որ Anthropic Messages հաճախորդները նույնպես (Claude → OpenAI → Responses) վերարտադրվում են:
 
 ## Պահեստավորում — Հիբրիդային հիշողություն + SQLite
 

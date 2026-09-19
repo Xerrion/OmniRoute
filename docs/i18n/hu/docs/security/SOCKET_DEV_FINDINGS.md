@@ -4,23 +4,15 @@
 
 ---
 
-Ez a dokumentum a karbantartó által készített tanúsítvány az `omniroute@3.8.5`
-csomaggal kapcsolatban jelzett hat `AI-detected potential malware` megállapításról,
-valamint az `omniroute@3.8.6` verzióban alkalmazott kockázatcsökkentő
-intézkedésekről. Céljai:
+> **Hatály megjegyzés:** A `socket.yml` konfigurálja a Socket.dev regisztrációs oldalán történő, közzététel utáni npm műtermék vizsgálatát (kihagyandó útvonalak a nem szállított tartalmakhoz, mint például a `tests/`, `docs/`, és a build jelentések). Nem kapcsol be CI/PR egyesítési kaput — nincs munkafolyamat a `.github/workflows` fájlban, nincs `package.json` szkript, és nincs `Makefile` cél, ami meghívná a Socket.dev-et.
 
-1. A biztonsági folyamatok üzemeltetői egyetlen hivatkozási alappal rendelkezzenek,
-   amikor a megállapításokat a tényleges forráskód alapján kell értékelniük.
-2. A jövőbeli MI-alapú ellenőrzők felismerhessék a karbantartó által aláírt
-   nyilatkozatot arról, hogy minden megjelölt útvonal szándékos, külön
-   engedélyezést igényel, és dokumentálva van.
-3. Írásos nyilvántartásunk legyen arról, _miért_ olyan az egyes hívási helyek
-   kialakítása, amilyen — így egy jövőbeli refaktorálás nem vezet véletlenül
-   egy szándékosan eltávolított ujjlenyomat újbóli bevezetéséhez.
+Ez a dokumentum a karbantartó által írt igazolás az `omniroute@3.8.5` ellen felmerült hat `AI-detected potential malware` megállapításról és az `omniroute@3.8.6` verzióban alkalmazott enyhítésekről. Célja, hogy:
 
-Ha olyan ellenőrzőt üzemeltet, amely a v3.8.6 kockázatcsökkentő intézkedéseinek
-kiadása után ismét megjelöli az alábbi hívási helyek bármelyikét, kérjük, nyisson
-egy hibajegyet az ellenőrzési nyomvonallal, és itt kibővítjük a tanúsítványt.
+1. A biztonsági pipeline operátorok egyetlen hivatkozással rendelkezzenek, amelyet idézhetnek, amikor a megállapításokat az aktuális forrással szemben kell értékelniük.
+2. A jövőbeli AI szkennerek felismerjék a karbantartó által aláírt állítást, miszerint minden megjelölt útvonal szándékos, választható és dokumentált.
+3. Írásos feljegyzésünk legyen arról, hogy _miért_ alakult ki az egyes hívási pontok a jelenlegi formájukban — így egy jövőbeli refaktorálás véletlenül sem vezet vissza egy olyan ujjlenyomatot, amelyet szándékosan eltávolítottak.
+
+Ha olyan szkennert üzemeltet, amely a v3.8.6 enyhítések bevezetése után újra megjelöli az alábbi hívási pontok bármelyikét, kérjük, nyisson egy hibajegyet a vizsgálati nyomkövetéssel, és mi kiegészítjük az igazolást itt.
 
 ---
 

@@ -22,22 +22,24 @@ OmniRoute לוכד את `reasoning_content` של המסייע שנוצר על י
 ## ארכיטקטורה
 
 ```
-תור N (המסייע יוצר):
+תור N (העוזר יוצר):
   → התגובה מכילה reasoning_content + tool_calls
   → אם requiresReasoningReplay(provider, model): cacheReasoningFromAssistantMessage()
-      כותב (לזיכרון + למסד הנתונים), לפי המפתח של כל tool_call.id
-  → מעביר את התגובה ללקוח (שעשוי לשמור את תהליך החשיבה או לא)
+      כותבת (לזיכרון + למסד הנתונים), עם מפתח המבוסס על כל tool_call.id
+  → העברת התגובה ללקוח (שעשוי לשמור את ההנמקה או לא)
 
-תור N+1 (הלקוח שולח בקשת המשך):
+תור N+1 (הלקוח שולח הודעת המשך):
   → המתרגם מזהה: requiresReasoningReplay(provider, model) === true
-  → עבור כל הודעת מסייע עם tool_calls וללא reasoning_content:
+  → עבור כל הודעת עוזר עם tool_calls וללא reasoning_content:
       lookupReasoning(toolCalls[0].id) → זיכרון → מסד נתונים
-      נמצא  → msg.reasoning_content = cached; recordReplay()
-      לא נמצא → msg.reasoning_content = "" (חלופת תאימות מדור קודם עבור DeepSeek ישן יותר)
-  → הספק במעלה הזרם מקבל היסטוריה עקבית → אין 400
+      נמצאה התאמה  → msg.reasoning_content = cached; recordReplay()
+      לא נמצאה התאמה → msg.reasoning_content = "" (חלופת תאימות לאחור עבור גרסאות ישנות יותר של DeepSeek)
+  → השירות במעלה הזרם מקבל היסטוריה עקבית → אין שגיאת 400
 ```
 
-הלכידה מתבצעת ב-`open-sse/handlers/chatCore.ts` (בשני מיקומים, בשני אתרי הקריאה ל-`cacheReasoningFromAssistantMessage`). ההשמעה מחדש מתבצעת ב-`open-sse/translator/index.ts` לאחר התאמת הסכימה, אך לפני הניתוב.
+הלכידה מתבצעת ב-`open-sse/handlers/chatCore.ts` (בשני מקומות, בשתי הקריאות אל `cacheReasoningFromAssistantMessage`). ההפעלה החוזרת מתבצעת ב-`open-sse/translator/index.ts` לאחר התאמת הסכימה אך לפני השליחה.
+
+תורות רגילים של העוזר (ללא קריאה לכלי) מקבלים מפתח באופן שונה: `buildAssistantMessageCacheKey()` מחשבת תקציר של תחום ההפעלה יחד עם התמליל המנורמל בפורמט OpenAI עד לאותו תור, מכיוון ש-DeepSeek דורש את ההנמקה של _כל_ תור קודם ברגע ש-`tools` קיים. עבור יעדים של Responses API (לדוגמה `opencode-go/deepseek-v4-flash`, שמנותב אל `/responses`), גוף הבקשה במעלה הזרם מכיל `input`, ולא `messages`, ולכן `translateRequest()` ‏(`open-sse/translator/index.ts`) מדווחת באמצעות אפשרות callback על תמליל הביניים שעבורו היא חישבה תקציר, ואתרי הלכידה מחשבים תקציר של אותו תמליל. מעבר ההפעלה החוזרת של Responses פועל על ייצוג הביניים של OpenAI עבור כל פורמט מקור, ולכן ההפעלה החוזרת מתבצעת גם עבור לקוחות Anthropic Messages ‏(Claude → OpenAI → Responses).
 
 ## אחסון — זיכרון היברידי + SQLite
 
@@ -72,7 +74,7 @@ CREATE TABLE IF NOT EXISTS reasoning_cache (
 );
 ```
 
-אינדקסים: `expires_at`, `provider`, `model`, `created_at`. הערך `expires_at` נשמר כמספר שניות מתקופת Unix; שכבת ה-SELECT מנרמלת ערכי טקסט ישנים באמצעות `EXPIRES_AT_EPOCH_SQL`.
+אינדקסים: `expires_at`,‏ `provider`,‏ `model`,‏ `created_at`. הערך `expires_at` מאוחסן כמספר השניות בתקופת Unix; שכבת ה-SELECT מנרמלת ערכי טקסט ישנים באמצעות `EXPIRES_AT_EPOCH_SQL`.
 
 ## זיהוי ספק / מודל
 

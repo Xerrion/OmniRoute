@@ -6,36 +6,34 @@
 
 Hanyoyi biyu na sanya Cursor a bayan OmniRoute ba tare da zaman IDE ba:
 
-1. Mai samar da **`cursor-api`** (katin "Cursor API", laƙabi `cua`): mai samarwa
-   da ke amfani da maɓallin API wanda ke riƙe da maɓallin API na mai amfani da Cursor
-   (`crsr_…`, wanda ake ƙirƙirawa a `https://cursor.com/dashboard/api`). Daga nan,
-   kowane abokin cinikin OmniRoute zai iya isa ga samfuran Cursor ta
-   `/v1/chat/completions` a matsayin `cursor-api/<model>` ko `cua/<model>`,
-   tare da matakan ƙayyadadden amfani, madadin da rajista na yau da kullum. Mai
-   samar da IDE (`cursor`, zaman OAuth/IDE) bai canza ba.
-2. **Wucewar Cursor CLI kai tsaye**: saita Cursor CLI (`agent`) zuwa OmniRoute domin
-   kowane RPC da CLI ke yi ya sami tantancewa da maɓallin API na OmniRoute, a tura
-   shi zuwa Cursor da bayanan shaidar haɗin `cursor-api`, sannan a rubuta shi a
+1. **Mai samar da `cursor-api`** (katin "Cursor API", laƙabi `cua`): mai samarwa
+   da ke amfani da maɓallin API, wanda ke riƙe da maɓallin API na mai amfani da Cursor (`crsr_…`, wanda ake samarwa a
+   `https://cursor.com/dashboard/api`). Duk wani abokin cinikin OmniRoute zai iya isa ga
+   samfurorin Cursor ta `/v1/chat/completions` a matsayin `cursor-api/<model>` ko
+   `cua/<model>`, tare da matakan ƙayyadadden amfani, fallback da rajista na yau da kullum. Mai samar da IDE
+   (`cursor`, zaman OAuth/IDE) bai canza ba.
+2. **Mika buƙatun Cursor CLI kai tsaye**: saita Cursor CLI (`agent`) ya yi amfani da OmniRoute domin
+   kowace RPC da CLI ke yi a tabbatar da ita ta amfani da maɓallin API na OmniRoute, a tura ta
+   zuwa Cursor tare da bayanan shaidar haɗin `cursor-api`, sannan a rubuta ta a
    shafin Logs.
 
 ## Dalilin da ya sa ake musayar maɓallin
 
-`api2.cursor.sh` yana ƙin karɓar ɗanyen maɓallin `crsr_…` a matsayin token na Bearer
-(401). Da farko Cursor CLI yana aika maɓallin ta POST zuwa
-`/auth/exchange_user_api_key`, sannan ya karɓi JWT na zaman da zai ƙare bayan awa
-ɗaya; `refreshToken` da aka mayar yana ɗauke da `exp` iri ɗaya, don haka sabuntawa
-na nufin sake musayar maɓallin.
-`open-sse/services/cursorApiKeyAuth.ts` yana yin wannan musayar, yana adana token
-na zama guda ɗaya ga kowane maɓalli, yana sake musayar sa mintuna biyar kafin
-lokacin ƙarewarsa, sannan yana cire token ɗin da aka adana idan Cursor ya amsa da 401. `CursorExecutor` yana kiran sa daidai kafin buɗe rafin sama ga haɗin
-`cursor-api`.
+`api2.cursor.sh` yana ƙin karɓar ainihin maɓallin `crsr_…` kai tsaye a matsayin alamar Bearer (401). Da farko Cursor
+CLI yana POST ɗin maɓallin zuwa `/auth/exchange_user_api_key`, sannan ya karɓi JWT na zaman
+da ke ƙarewa bayan awa ɗaya; `refreshToken` da aka dawo da shi yana ɗauke da irin wannan
+`exp`, don haka sabuntawa na nufin sake musayar maɓallin.
+`open-sse/services/cursorApiKeyAuth.ts` yana yin wannan musayar, yana adana alamar zaman
+guda ɗaya ga kowane maɓalli, yana sake musayar ta minti biyar kafin ƙarewar wa’adinta, sannan yana cire
+alamar da aka adana idan Cursor ya amsa da 401. `CursorExecutor` yana kiransa jim kaɗan kafin buɗe
+rafi na upstream don haɗin `cursor-api`.
 
 ## Mai samar da `cursor-api`
 
 Rajista: `open-sse/config/providers/registry/cursor/index.ts`
-(`cursor_apiProvider`, `authType: "apikey"`, `format`, `baseUrl` da
-`models` iri ɗaya da na `cursor`). Katin katalog:
-`src/shared/constants/providers/apikey/specialty-media.ts`. Taswirar mai aiwatarwa:
+(`cursor_apiProvider`, `authType: "apikey"`, daidai `format`, `baseUrl` da
+`models` kamar `cursor`). Katin kasida:
+`src/shared/constants/providers/apikey/specialty-media.ts`. Taswirar executor:
 `open-sse/executors/index.ts` (`"cursor-api"` / `cua` →
 `new CursorExecutor("cursor-api")`).
 
@@ -60,45 +58,55 @@ curl -sS http://localhost:20128/v1/chat/completions \
 
 Bayanan kula:
 
-- Jerin samfura na `cursor-api` yana fitowa daga tsayayyen rajistar Cursor
-  (jerin da mai samar da IDE yake komawa gare shi idan ya gaza); ba a buƙatar
-  shigar da `cursor-agent` a kan uwar-garken OmniRoute.
-- `POST /api/providers/{id}/refresh-cursor` na mai samar da IDE na `cursor`
-  ne kawai; haɗin `cursor-api` ba shi da zaman IDE da za a sabunta.
+- Jerin samfura na `cursor-api` yana fitowa daga tsayayyen rajistar Cursor (wato
+  jerin da mai samar da IDE yake komawa gare shi idan zaɓin farko bai yi aiki ba); ba a buƙatar shigar da `cursor-agent`
+  a kan na’urar da ke ɗauke da OmniRoute.
+- `POST /api/providers/{id}/refresh-cursor` na mai samar da IDE na `cursor` ne
+  kawai; haɗin `cursor-api` ba su da zaman IDE da za a sabunta.
 
-## Wucewar Cursor CLI kai tsaye
+## ID na asali na samfura da matakin ƙoƙari
+
+Ga `cursor` / `cu` da `cursor-api` / `cua`, mai daidaita ƙoƙarin Claude da ake amfani da shi tare
+yana barin ID na samfurin da aka nema yadda yake. Cursor na iya tallata ƙarin suna kamar
+`-low` a matsayin wani ɓangare na ainihin ID na samfurin, maimakon a matsayin laƙabin ƙoƙari na OmniRoute.
+Cursor executor yana kiyaye daidai gwargwadon abin da ya dace da kasidar kai tsaye; idan babu
+wanda ya dace, mai warware samfurin da yake da shi ne ke kula da fallback daga ƙarin suna zuwa siga.
+
+Wannan ba ya canza daidaita ƙoƙari ga hanyoyin Claude kai tsaye, masu dacewa da Claude,
+ko Vertex. Samuwar har yanzu tana dogara da kasida da haƙƙin amfani na
+asusun Cursor da aka zaɓa.
+
+## Miƙa buƙatun Cursor CLI
 
 Hanya: `src/app/api/cursor-cli/[...path]/route.ts` →
-`open-sse/handlers/cursorCliProxy.ts`. An yi rajistar gabatarwar
-`/api/cursor-cli/` a cikin `src/shared/constants/publicApiRoutes.ts` saboda
-handler ɗin yana aiwatar da nasa tantancewar:
+`open-sse/handlers/cursorCliProxy.ts`. An yi rajistar prefix ɗin `/api/cursor-cli/` a cikin
+`src/shared/constants/publicApiRoutes.ts` saboda handler ɗin yana
+aiwatar da tantancewar kansa:
 
-| Hanya                                                                                                                           | Tantancewar da ake jira daga CLI | Abin da OmniRoute yake yi                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /auth/exchange_user_api_key`                                                                                              | `Bearer <OmniRoute API key>`     | Yana tabbatar da maɓallin, yana ƙirƙirar JWT na HS256 mai tsawon awa 1 (wanda aka sa wa hannu da `JWT_SECRET`) sannan ya mayar da shi                                                                                  |
-| kowace sauran hanya (`/aiserver.v1.*`, `/agent.v1.AgentService/RunSSE`, `/aiserver.v1.BidiService/BidiAppend`, `/v1/traces`, …) | `Bearer <that JWT>`              | Yana tabbatar da mai bayarwa/masu karɓa/lokacin ƙarewa, yana zaɓar haɗin `cursor-api` mai aiki, yana maye gurbin header na Authorization da token na Cursor da aka musanya, sannan yana mayar da amsar a matsayin rafi |
+| Path                                                                                                                       | Tantancewar da ake sa ran daga CLI | Abin da OmniRoute yake yi                                                                                                                                               |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /auth/exchange_user_api_key`                                                                                         | `Bearer <OmniRoute API key>`       | Yana tabbatar da key ɗin, ya ƙirƙiri JWT na HS256 mai tsawon awa 1 (wanda aka sanya wa hannu da `JWT_SECRET`) sannan ya mayar da shi                                    |
+| duk wata hanya (`/aiserver.v1.*`, `/agent.v1.AgentService/RunSSE`, `/aiserver.v1.BidiService/BidiAppend`, `/v1/traces`, …) | `Bearer <that JWT>`                | Yana tabbatar da issuer/audience/expiry, ya zaɓi haɗin `cursor-api` mai aiki, ya sauya header na Authorization da token ɗin Cursor da aka musanya sannan ya watsa amsar |
 
-CLI yana karanta `exp` daga duk token ɗin da ya karɓa, don haka ba shi token
-marar bayyana yana sa ya sake musayarwa kafin kusan kowace buƙata; JWT da aka
-ƙirƙira yana hana hakan. Amsar 401 daga OmniRoute tana sa CLI ya sake yin
-musayar.
+CLI yana warware `exp` daga duk token ɗin da ya karɓa, don haka ba shi token
+maras bayyananniyar ma’ana yana sa ya sake musanya shi kafin kusan kowace buƙata; JWT ɗin da aka
+ƙirƙira yana hana hakan. Amsar 401 daga OmniRoute tana sa CLI ya sake musanyawa.
 
 ### Saitawa
 
-1. Ƙirƙiri maɓallin API na OmniRoute (Dashboard → API keys) da kuma haɗin
-   `cursor-api`.
-2. Umurci CLI ya yi amfani da HTTP/1.1 don rafin agent. A cikin
+1. Ƙirƙiri OmniRoute API key (Dashboard → API keys) da haɗin `cursor-api`.
+2. Umurci CLI ya yi amfani da HTTP/1.1 don stream ɗin agent. A cikin
    `~/.cursor/cli-config.json`:
 
    ```json
    { "network": { "useHttp1ForAgent": true } }
    ```
 
-   Ba tare da wannan ba, CLI yana buɗe zagayen agent ta HTTP/2 zuwa wata uwar-garken
-   agent da aka saita dabam, kuma RPC na matakin sarrafawa kawai ne suke wucewa
-   ta endpoint ɗin.
+   Idan babu wannan, CLI zai buɗe zagayen agent ta HTTP/2 zuwa host na agent da aka
+   saita dabam, kuma RPCs na control-plane ne kaɗai za su bi ta
+   endpoint ɗin.
 
-3. Gudanar da CLI ta hanyar OmniRoute:
+3. Gudanar da CLI tare da OmniRoute:
 
    ```bash
    export CURSOR_API_ENDPOINT=http://localhost:20128/api/cursor-cli
@@ -106,19 +114,19 @@ musayar.
    agent -p --trust "Reply with exactly OK"
    ```
 
-Kowane mataki yana bayyana a Logs da mai samarwa `cursor-api`, nau'in buƙata
-`cursor-cli`, hanya `/api/cursor-cli/<rpc>`, tare da danganta shi da maɓallin API
-na OmniRoute da kuma haɗin da ya sarrafa shi.
+Kowane mataki yana bayyana a Logs da provider `cursor-api`, nau'in buƙata `cursor-cli`,
+path `/api/cursor-cli/<rpc>`, tare da danganta shi ga OmniRoute API key da
+haɗin da ya sarrafa shi.
 
 ### Yanayin gazawa
 
-| Yanayi                                                       | Amsar ga CLI                                                |
-| ------------------------------------------------------------ | ----------------------------------------------------------- |
-| Maɓallin OmniRoute da ba a sani ba da `REQUIRE_API_KEY=true` | 401 `unauthenticated` yayin musaya                          |
-| `REQUIRE_API_KEY=false`                                      | zaman da ba a tantance ba (ya yi daidai da halayen `/v1/*`) |
-| JWT na zaman da ya ƙare / na waje / aka yi wa kutse          | 401, CLI zai sake musaya                                    |
-| An soke maɓallin API na OmniRoute bayan musaya               | 401 a RPC na gaba                                           |
-| Babu haɗin `cursor-api` mai aiki                             | 503 `unavailable`                                           |
-| Cursor ya ƙi maɓallin haɗin                                  | 401 `unauthenticated`, an share zaman da aka adana          |
-| Ba za a iya isa ga uwar garken sama ba                       | 502 `unavailable` (saƙon da aka tsabtace)                   |
-| Ba a saita `JWT_SECRET` ba                                   | 503 yayin musaya                                            |
+| Yanayi                                                  | Amsa ga CLI                                                 |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| OmniRoute key da ba a sani ba da `REQUIRE_API_KEY=true` | 401 `unauthenticated` yayin musanyawa                       |
+| `REQUIRE_API_KEY=false`                                 | zaman da ba a tantance ba (yana kwaikwayon halayen `/v1/*`) |
+| JWT na zaman da ya ƙare / na waje / aka sauya           | 401, CLI zai sake musanyawa                                 |
+| An soke OmniRoute API key bayan musanyawa               | 401 a RPC na gaba                                           |
+| Babu haɗin `cursor-api` mai aiki                        | 503 `unavailable`                                           |
+| Cursor ya ƙi key na haɗin                               | 401 `unauthenticated`, an goge zaman da aka adana           |
+| Ba a iya isa ga upstream ba                             | 502 `unavailable` (saƙon da aka tsabtace)                   |
+| Ba a saita `JWT_SECRET` ba                              | 503 yayin musanyawa                                         |

@@ -166,37 +166,39 @@ Teburin `memory_vec_meta` (migration `083_memory_vec.sql`) yana adana:
 - `last_reset_at` — timestamp na cikakken reset na ƙarshe.
 - `vec_loaded` — alamar 0/1 da ke nuna ko sqlite-vec ya loda cikin nasara.
 
-## Tsawaita saituna
+## Faɗaɗa saituna
 
-Akwai filayen embedding da vector guda tara a cikin `MemorySettingsExtended` a
-`src/shared/schemas/memory.ts`, waɗanda ake adana su ta hanyar `src/lib/db/settings.ts`:
+Ana samun filayen embedding da vector guda tara a cikin `MemorySettingsExtended` a
+`src/shared/schemas/memory.ts`, kuma ana adana su ta hanyar `src/lib/db/settings.ts`:
 
-| Fili                     | Nau'i                                              | Tsoho    | Bayani                                                       |
-| ------------------------ | -------------------------------------------------- | -------- | ------------------------------------------------------------ |
-| `embeddingSource`        | `"remote" \| "static" \| "transformers" \| "auto"` | `"auto"` | Tushen embedding da za a yi amfani da shi                    |
-| `embeddingProviderModel` | `string \| null`                                   | `null`   | Mai bayarwa/samfuri a tsarin `provider/model`                |
-| `customBaseUrl`          | `string \| null`                                   | `null`   | URL na asalin endpoint mai dacewa da OpenAI don Memory kawai |
-| `customModelId`          | `string \| null`                                   | `null`   | ID na samfurin da ake aikawa zuwa endpoint na musamman       |
-| `transformersEnabled`    | `boolean`                                          | `false`  | Amincewa da amfani da Transformers.js (MiniLM, ~400MB)       |
-| `staticEnabled`          | `boolean`                                          | `false`  | Amincewa da samfurin gida na static potion-base-8M           |
-| `rerankEnabled`          | `boolean`                                          | `false`  | Kunna matakin sake jera sakamako (yana ƙara +200-500ms/req)  |
-| `rerankProviderModel`    | `string \| null`                                   | `null`   | Mai bayarwa/samfurin sake jeri a tsarin `provider/model`     |
-| `vectorStore`            | `"sqlite-vec" \| "qdrant" \| "auto"`               | `"auto"` | Backend na vector da za a yi amfani da shi                   |
+| Fili                     | Nau'i                                              | Tsoho    | Bayani                                                        |
+| ------------------------ | -------------------------------------------------- | -------- | ------------------------------------------------------------- |
+| `embeddingSource`        | `"remote" \| "static" \| "transformers" \| "auto"` | `"auto"` | Tushen embedding da za a yi amfani da shi                     |
+| `embeddingProviderModel` | `string \| null`                                   | `null`   | Mai bayarwa/samfuri a tsarin `provider/model`                 |
+| `customBaseUrl`          | `string \| null`                                   | `null`   | URL na asalin endpoint mai dacewa da OpenAI don Memory kawai  |
+| `customModelId`          | `string \| null`                                   | `null`   | ID na samfurin da ake aika wa endpoint na musamman            |
+| `transformersEnabled`    | `boolean`                                          | `false`  | Zaɓin shiga don Transformers.js (MiniLM, ~400MB)              |
+| `staticEnabled`          | `boolean`                                          | `false`  | Zaɓin shiga don samfurin gida na static potion-base-8M        |
+| `rerankEnabled`          | `boolean`                                          | `false`  | Kunna matakin sake jerantawa (yana ƙara +200-500ms/req)       |
+| `rerankProviderModel`    | `string \| null`                                   | `null`   | Mai bayarwa/samfurin sake jerantawa a tsarin `provider/model` |
 
-Ana samar da damar amfani da waɗannan ta hanyar `GET /PUT /api/settings/memory` (schema `MemorySettingsExtendedSchema`).
+Ana tantance `rerankProviderModel` ta `POST /v1/rerank` (wanda ake kira ta loopback), saboda haka yana karɓar duk abin da wannan route ɗin ke karɓa: samfurin sake jerantawa na cloud da aka zaɓa (`cohere/rerank-v3.5`, `jina-ai/jina-reranker-v3.5`, …) ko node na mai bayarwa mai dacewa da OpenAI a matsayin `<node-prefix>/<model>` (misali `skilled-mini/bge-reranker-v2-m3` don akwatin TEI/Infinity). Node na loopback koyaushe sun cancanta; node da ke kan wani host (LAN, Tailscale) yana kuma buƙatar feature flag na `RERANK_REMOTE_PROVIDER_NODES` kuma dole ne ya cika ƙa'idar URL mai fita ta mai bayarwa — duba [Feature Flags](../reference/FEATURE_FLAGS.md). Mai zaɓin dashboard yana jera zaɓaɓɓun masu bayarwa tare da node na gida; ana iya saita kowace ingantacciyar ƙimar `provider/model` kai tsaye ta `PUT /api/settings/memory`.
+| `vectorStore` | `"sqlite-vec" \| "qdrant" \| "auto"` | `"auto"` | Backend na vector da za a yi amfani da shi |
+
+Ana samar da waɗannan ta `GET /PUT /api/settings/memory` (schema `MemorySettingsExtendedSchema`).
 
 Ga tushen `remote`, Memory kuma yana karɓar saitunan `customBaseUrl` da
-`customModelId` na zaɓi. Tare suna zaɓar endpoint na `/embeddings` mai dacewa
-da OpenAI da kuma samfurinsa ba tare da canza rajistar embedding ta gaba ɗaya ba. Ana daidaita
-endpoint ɗin kafin amfani, sannan manufar URL mai fita ta mai bayarwa tana bincikarsa: ana
-buƙatar HTTP(S), ana ƙin bayanan shiga da aka saka a ciki da kuma query strings, sannan
-adiresoshin cloud-metadata suna ci gaba da kasancewa a toshe. Ƙimomi marasa komai suna barin
-mai bayarwar rajista da aka zaɓa yadda yake. Ana tsabtace kurakuran da ake mayarwa zuwa
-dashboard, kuma ba a taɓa rubuta bayanan shiga na endpoint cikin log ba.
+`customModelId` na zaɓi. Tare, suna zaɓar endpoint na `/embeddings` mai dacewa da
+OpenAI da kuma samfurinsa ba tare da canza rajistar embedding ta duniya ba. Ana
+daidaita endpoint kafin amfani sannan a duba shi da ƙa'idar URL mai fita ta mai bayarwa:
+ana buƙatar HTTP(S), ana ƙin bayanan shaidar shiga da query strings da aka saka a ciki,
+kuma adireshin cloud-metadata suna ci gaba da kasancewa a katange. Ƙimomin da babu
+komai a cikinsu suna kiyaye zaɓaɓɓen mai bayarwa na rajista. Ana tsabtace kurakuran da
+ake mayarwa zuwa dashboard, kuma ba a taɓa rubuta bayanan shaidar endpoint a log ba.
 
-> **TODO (D20):** Ba a aiwatar da scope na `global` (raba memories a tsakanin dukkan API keys) ba
-> a wannan sakin. Yana buƙatar sauye-sauyen schema da hanyar retrieval ta gaba ɗaya.
-> A bibiyi wannan daban.
+> **TODO (D20):** Ba a aiwatar da scope na `global` (raba memories tsakanin dukkan
+> API keys) a wannan sakin ba. Yana buƙatar sauye-sauyen schema da hanyar retrieval
+> ta duniya. A bi diddiginsa daban.
 
 ## Matakan ma'ajiyar bayanai
 

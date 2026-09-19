@@ -68,15 +68,23 @@ export OMNIROUTE_CHAT_ADMISSION_QUEUE_MS=5000 # તરત ફરી પ્રય
 
 ## npm install ચેતવણીઓ (ERESOLVE / peer / deprecated)
 
-જ્યારે તમે `npm install -g omniroute` ચલાવો છો, ત્યારે તમને `npm warn ERESOLVE`, peer-dependency સૂચનાઓ અને `deprecated` સંદેશાઓ જેવી ઘણી ચેતવણીઓ જોવા મળી શકે છે. **આ અપેક્ષિત અને હાનિરહિત છે.** જો આઉટપુટમાં `added <N> packages` દેખાય, તો તમારું ઇન્સ્ટોલેશન સફળ થયું છે.
+જ્યારે તમે `npm install -g omniroute` ચલાવો છો, ત્યારે તમને `npm warn ERESOLVE`, peer-dependency સૂચનાઓ અને `deprecated` સંદેશાઓ જેવી ઘણી ચેતવણીઓ દેખાઈ શકે છે. **આ અપેક્ષિત અને હાનિરહિત છે.** જો આઉટપુટમાં `added <N> packages` દેખાય, તો તમારું ઇન્સ્ટોલેશન સફળ થયું છે.
 
-આ ચેતવણીઓ એવા તૃતીય-પક્ષ પૅકેજોમાં જૂની peer-dependency શ્રેણીઓને કારણે આવે છે, જેના પર OmniRouteનું નિયંત્રણ નથી:
+peer-dependency રિઝોલ્યુશન ચેતવણીઓને દબાવવા માટે, OmniRouteનું સમર્થિત ઇન્સ્ટોલેશન સ્વરૂપ વાપરો:
 
-1. **`marked-terminal` ને `marked >=1 <16` જોઈએ છે, પરંતુ `marked@18` મળ્યું** — વ્યવહારમાં યોગ્ય રીતે કાર્ય કરે છે; upstream peer શ્રેણી માત્ર જૂની છે.
-2. **`deprecated prebuild-install@7.1.3`** — આ એક transitive native-binary fetch helper છે. તેનો ઉપયોગ પિન કરેલ `wreq-js` transport binding ઇન્સ્ટોલ કરવા માટે થતો નથી અને તે web-cookie
-   provider transport સેટઅપ નિષ્ફળ ગયું હોવાનું સૂચવતું નથી.
+```bash
+npm install -g omniroute --legacy-peer-deps
+```
 
-**કોઈ પગલાં લેવાની જરૂર નથી** — upstream પૅકેજોને fork કર્યા વિના આ ચેતવણીઓને સંપૂર્ણપણે બંધ કરી શકાતી નથી.
+`--legacy-peer-deps` માત્ર `ERESOLVE` અને peer-dependency સૂચનાઓને દબાવે છે. ડિપ્રિકેશન સૂચનાઓ દેખાતી રહે છે, કારણ કે તે ટ્રાન્ઝિટિવ તૃતીય-પક્ષ પેકેજોમાંથી આવે છે; તે ઇન્સ્ટોલેશન નિષ્ફળ ગયું હોવાનું સૂચવતી નથી.
+
+આ ચેતવણીઓ એવા તૃતીય-પક્ષ પેકેજોમાંની જૂની peer-dependency રેન્જને કારણે આવે છે, જેના પર OmniRouteનું નિયંત્રણ નથી:
+
+1. **`marked-terminal`ને `marked >=1 <16` જોઈએ છે, પરંતુ `marked@18` મળ્યું** — વ્યવહારમાં તે બરાબર કાર્ય કરે છે; upstream peer રેન્જ માત્ર જૂની છે.
+2. **`deprecated prebuild-install@7.1.3`** — ટ્રાન્ઝિટિવ નેટિવ-બાઇનરી ફેચ હેલ્પર. તેનો ઉપયોગ પિન કરેલ `wreq-js` ટ્રાન્સપોર્ટ બાઇન્ડિંગ ઇન્સ્ટોલ કરવા માટે થતો નથી અને તે web-cookie
+   પ્રોવાઇડર ટ્રાન્સપોર્ટ સેટઅપ નિષ્ફળ ગયું હોવાનું સૂચવતું નથી.
+
+**કોઈ પગલાં લેવાની જરૂર નથી** — upstream પેકેજોને fork કર્યા વિના આ ચેતવણીઓને સંપૂર્ણપણે દબાવી શકાતી નથી.
 
 ---
 
