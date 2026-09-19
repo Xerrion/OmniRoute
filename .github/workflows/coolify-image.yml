@@ -43,7 +43,7 @@ jobs:
           target: runner-web
           platforms: linux/amd64
           build-args: |
-            OMNIROUTE_USE_TURBOPACK=0
+            OMNIROUTE_USE_TURBOPACK=1
           push: true
           tags: |
             ghcr.io/xerrion/omniroute:coolify
