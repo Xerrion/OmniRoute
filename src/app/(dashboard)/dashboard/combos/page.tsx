@@ -85,7 +85,6 @@ import {
 import { getComboStepTarget } from "@/lib/combos/steps";
 import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
 import { modelFamily } from "@/lib/combos/invariants";
-import { resolveCanonicalProviderModel } from "@omniroute/open-sse/services/model.ts";
 import { resolveServerErrorMessage } from "@/lib/api/serverErrorMessage";
 import { useTranslations } from "next-intl";
 
@@ -665,7 +664,8 @@ function normalizeModelEntry(entry) {
 function computeAllowedRestrictionSync(
   isEdit: boolean,
   combo: { allowedProviders?: unknown; allowedModelFamilies?: unknown } | null | undefined,
-  models: Array<{ providerId?: string; model?: string }>
+  models: Array<{ providerId?: string; model?: string }>,
+  builderProviders: Array<{ providerId?: unknown; alias?: unknown; prefix?: unknown }> = []
 ): { allowedProviders?: string[]; allowedModelFamilies?: null; overrideAllowedProviders?: true } {
   if (!isEdit) return {};
   const result: {
@@ -680,8 +680,8 @@ function computeAllowedRestrictionSync(
       .map((m) => {
         if (m.providerId) return m.providerId;
         if (typeof m.model !== "string" || !m.model.includes("/")) return "";
-        const [aliasOrProvider, ...rest] = m.model.split("/");
-        return resolveCanonicalProviderModel(aliasOrProvider, rest.join("/")).provider || "";
+        const [aliasOrProvider] = m.model.split("/");
+        return resolveComboBuilderProviderId(aliasOrProvider, builderProviders) || aliasOrProvider;
       })
       .filter((p): p is string => Boolean(p));
     result.allowedProviders = Array.from(new Set([...existingProviders, ...stepProviders]));
@@ -3080,7 +3080,10 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, combo
 
     // When editing an existing combo from the dashboard form, synchronize allowedProviders
     // and clear legacy family restrictions so adding steps across providers never triggers COMBO_008
-    Object.assign(saveData, computeAllowedRestrictionSync(isEdit, combo, models));
+    Object.assign(
+      saveData,
+      computeAllowedRestrictionSync(isEdit, combo, models, builderProviders)
+    );
 
     // Per-combo description (#5005). Free-text, optional, persisted in combo data.
     if (description.trim()) {
