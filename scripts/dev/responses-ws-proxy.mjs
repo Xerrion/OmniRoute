@@ -325,6 +325,7 @@ function getAuthHeaders(requestUrl, requestHeaders) {
     "x-codex-turn-metadata",
     "originator",
     "user-agent",
+    "x-omniroute-compression",
   ]) {
     if (isText(requestHeaders[key])) headers[key] = requestHeaders[key];
   }

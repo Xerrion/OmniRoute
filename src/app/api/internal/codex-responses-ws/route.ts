@@ -671,6 +671,11 @@ async function prepare(body: JsonRecord) {
       provider,
       model,
       requestId: randomUUID(),
+      headers: context.clientHeaders,
+      apiKeyInfo: metadata,
+      comboName: combo ? context.requestedModel : null,
+      routingComboId: typeof combo?.id === "string" ? combo.id : null,
+      providerSpecificData: refreshedCredentials.providerSpecificData,
     });
     credentialsWithFingerprint = withCodexFingerprintCredentials(
       withReasoningRuleContext(refreshedCredentials, reasoningRuleDirective),

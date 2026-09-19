@@ -10,6 +10,7 @@ const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-ws-custom-tools
 process.env.DATA_DIR = dataDir;
 process.env.APP_LOG_TO_FILE = "false";
 process.env.OMNIROUTE_WS_BRIDGE_SECRET = "test-custom-tools-bridge";
+process.env.API_KEY_SECRET = "test-ws-compression-key-secret";
 
 const core = await import("../../src/lib/db/core.ts");
 const { createProviderConnection } = await import("../../src/lib/db/providers.ts");
@@ -40,7 +41,7 @@ test.after(() => {
   fs.rmSync(dataDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
-async function prepare(response: Record<string, unknown>) {
+async function prepare(response: Record<string, unknown>, headers: Record<string, string> = {}) {
   const result = await POST(
     new Request("http://omniroute.local/api/internal/codex-responses-ws", {
       method: "POST",
@@ -51,7 +52,7 @@ async function prepare(response: Record<string, unknown>) {
       body: JSON.stringify({
         action: "prepare",
         requestUrl: "http://omniroute.local/v1/responses",
-        headers: {},
+        headers,
         response: { model: "codex/gpt-5.5", ...response },
       }),
     })
@@ -250,4 +251,40 @@ test("a reused WebSocket preserves a custom tool through call, result and final 
     await closed;
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
+});
+
+test("WS prepare passes compression headers and the authenticated key policy to the pipeline", async () => {
+  test.mock.method(globalThis, "fetch", async () => new Response(null, { status: 204 }));
+  const { updateCompressionSettings } = await import("../../src/lib/db/compression.ts");
+  const { createCompressionCombo } = await import("../../src/lib/db/compressionCombos.ts");
+  const { createApiKey, updateApiKeyPermissions } = await import("../../src/lib/db/apiKeys.ts");
+  const profile = createCompressionCombo({
+    name: "WS route test profile",
+    pipeline: [{ engine: "codex-responses" }],
+  });
+  await updateCompressionSettings({
+    enabled: true,
+    engines: {},
+    activeComboId: null,
+    autoTriggerTokens: 0,
+    defaultMode: "off",
+  });
+  const output = JSON.stringify(
+    Array.from({ length: 20 }, (_, id) => ({ id, status: "ok" })),
+    null,
+    2
+  );
+  const input = [
+    { type: "function_call", call_id: "compress-1", name: "run_command", arguments: "{}" },
+    { type: "function_call_output", call_id: "compress-1", output },
+  ];
+  const headers = { "x-omniroute-compression": profile.name };
+  const compressed = await prepare({ input }, headers);
+  assert.ok(compressed.input[1].output.length < output.length);
+  assert.deepEqual(JSON.parse(compressed.input[1].output), JSON.parse(output));
+
+  const key = await createApiKey("ws-no-compression", "machine1234567890");
+  await updateApiKeyPermissions(key.id, { compressionEnabled: false });
+  const unchanged = await prepare({ input }, { ...headers, authorization: `Bearer ${key.key}` });
+  assert.equal(unchanged.input[1].output, output);
 });

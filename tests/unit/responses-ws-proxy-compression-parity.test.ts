@@ -20,6 +20,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import { WebSocket } from "ws";
 
 const { createResponsesWsProxy } = await import("../../scripts/dev/responses-ws-proxy.mjs");
 
@@ -166,7 +167,9 @@ test("#8052: every logical response.create turn on a reused WS should hit the in
     }
   });
 
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/api/v1/responses?api_key=local-token`);
+  const ws = new WebSocket(`ws://127.0.0.1:${port}/api/v1/responses?api_key=local-token`, {
+    headers: { "x-omniroute-compression": "off" },
+  });
   ws.addEventListener("message", (event) => {
     downstreamMessages.push(JSON.parse(String(event.data)));
   });
@@ -210,6 +213,13 @@ test("#8052: every logical response.create turn on a reused WS should hit the in
       2,
       `expected 2 internal "prepare" calls (one per logical response.create turn), got ${prepareRequests.length} — ` +
         "the second turn on a reused WebSocket connection bypasses prepare()/compression entirely (#8052)"
+    );
+    assert.deepEqual(
+      prepareRequests.map(
+        (entry) => (entry.headers as Record<string, string>)["x-omniroute-compression"]
+      ),
+      ["off", "off"],
+      "the compression override must survive the upgrade and every reused turn"
     );
   } finally {
     ws.close();

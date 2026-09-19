@@ -287,11 +287,6 @@ import {
 } from "./chatCore/compressionSettings.ts";
 import type { EnforceDecision } from "@/lib/quota/types";
 import { isCompressionExcluded } from "../services/compression/exclusions.ts";
-import {
-  isBuiltinStackedPipeline,
-  isStackedCompressionCombo,
-  type RuntimeCompressionCombo,
-} from "./chatCore/compressionComboPredicates.ts";
 import { emitOutputStyleTelemetry } from "./chatCore/outputStyleTelemetry.ts";
 import {
   writeCompressionAnalytics,
@@ -387,11 +382,7 @@ import {
   resolveComboContextLimit,
 } from "../services/contextManager.ts";
 import { resolveBackgroundTaskRedirect } from "./chatCore/backgroundRedirect.ts";
-import type {
-  CompressionConfig,
-  CompressionPipelineStep,
-  CompressionResult,
-} from "../services/compression/types.ts";
+import type { CompressionConfig, CompressionResult } from "../services/compression/types.ts";
 import { generateSessionId } from "../services/sessionManager.ts";
 import { prepareWebSearchFallbackBody } from "../services/webSearchFallback.ts";
 import { prepareWebFetchFallbackBody } from "../services/webFetchInterception.ts";
@@ -1449,17 +1440,14 @@ export async function handleChatCore({
     // Runs BEFORE the existing reactive compressContext() to proactively reduce tokens.
     try {
       const {
-        selectCompressionStrategy,
         selectCompressionPlan,
-        enginesMapDerivesStackedPipeline,
-        activeComboResolves,
         applyCompressionAsync,
         resolveCacheAwareConfig,
         formatCompressionMeta,
-        buildNamedComboLookup,
         formatCompressionAnnotation,
       } = await import("../services/compression/strategySelector.ts");
       const { trackCompressionStats } = await import("../services/compression/stats.ts");
+      const { resolveRequestCompressionConfig } = await import("./chatCore/compressionConfig.ts");
       let config: CompressionConfig = compressionSettings ?? createDisabledCompressionConfig();
       if (compressionExcluded || !apiKeyCompressionEnabled) {
         config = { ...config, enabled: false };
@@ -1467,193 +1455,24 @@ export async function handleChatCore({
       if (!promptCompressionEnabled || !compressionSettings) {
         log?.debug?.("COMPRESSION", "Prompt compression disabled or unavailable");
       }
-      let compressionComboKey = comboName ?? null;
-      let compressionComboApplied = false;
-      const applyCompressionComboConfig = (
-        compressionCombo: RuntimeCompressionCombo | null,
-        routingOverrideIds: string[] = []
-      ): boolean => {
-        if (!compressionCombo || compressionCombo.pipeline.length === 0) return false;
-        const comboLanguagePacks = [
-          ...new Set(
-            compressionCombo.languagePacks
-              .map((pack) => pack.trim())
-              .filter((pack) => pack.length > 0)
-          ),
-        ];
-        const comboOutputIntensity = (
-          ["lite", "full", "ultra"].includes(compressionCombo.outputModeIntensity)
-            ? compressionCombo.outputModeIntensity
-            : (config.cavemanOutputMode?.intensity ?? "full")
-        ) as "lite" | "full" | "ultra";
-        const comboDefaultLanguage =
-          comboLanguagePacks.find((pack) => pack === config.languageConfig?.defaultLanguage) ??
-          comboLanguagePacks[0] ??
-          config.languageConfig?.defaultLanguage ??
-          "en";
-        const comboOverrides = { ...(config.comboOverrides ?? {}) };
-        for (const id of routingOverrideIds) {
-          if (id) comboOverrides[id] = "stacked";
-        }
-        config = {
-          ...config,
-          compressionComboId: compressionCombo.id,
-          stackedPipeline: compressionCombo.pipeline,
-          languageConfig: {
-            ...(config.languageConfig ?? {
-              enabled: false,
-              defaultLanguage: "en",
-              autoDetect: true,
-              enabledPacks: ["en"],
-            }),
-            enabled: true,
-            defaultLanguage: comboDefaultLanguage,
-            enabledPacks:
-              comboLanguagePacks.length > 0
-                ? comboLanguagePacks
-                : (config.languageConfig?.enabledPacks ?? ["en"]),
-          },
-          cavemanOutputMode: {
-            ...(config.cavemanOutputMode ?? {
-              enabled: false,
-              intensity: "full",
-              autoClarity: true,
-            }),
-            enabled: compressionCombo.outputMode,
-            intensity: comboOutputIntensity,
-          },
-          comboOverrides,
-        };
-        compressionComboApplied = true;
-        return true;
-      };
-      if ((isCombo && comboName) || routingComboId) {
-        try {
-          const { getComboByName } = await import("@/lib/db/combos");
-          let comboConfig = await getComboByName(comboName);
-          if (!comboConfig && comboName?.startsWith("combo/")) {
-            comboConfig = await getComboByName(comboName.substring(6));
-          }
-          const comboRuntimeConfig =
-            comboConfig?.config && typeof comboConfig.config === "object"
-              ? (comboConfig.config as Record<string, unknown>)
-              : {};
-          const comboMode =
-            typeof comboRuntimeConfig.compressionMode === "string"
-              ? comboRuntimeConfig.compressionMode
-              : typeof comboConfig?.compressionOverride === "string"
-                ? comboConfig.compressionOverride
-                : null;
-          if (
-            comboMode === "off" ||
-            comboMode === "lite" ||
-            comboMode === "standard" ||
-            comboMode === "aggressive" ||
-            comboMode === "ultra" ||
-            comboMode === "rtk" ||
-            comboMode === "stacked"
-          ) {
-            config = {
-              ...config,
-              comboOverrides: {
-                ...(config.comboOverrides ?? {}),
-                ...(comboName ? { [comboName]: comboMode } : {}),
-                ...(comboConfig?.id ? { [String(comboConfig.id)]: comboMode } : {}),
-              },
-            };
-            compressionComboKey = comboName;
-          }
-          const routingComboIds = [
-            comboConfig?.id,
-            comboName,
-            routingComboId,
-            comboName?.startsWith("combo/") ? comboName.substring(6) : null,
-          ].filter((id): id is string => typeof id === "string" && id.length > 0);
-          if (routingComboIds.length > 0) {
-            const { getCompressionComboForRoutingCombo } =
-              await import("../../src/lib/db/compressionCombos.ts");
-            const assignedCompressionCombo =
-              routingComboIds
-                .map((id) => getCompressionComboForRoutingCombo(id))
-                .find((combo) => combo !== null) ?? null;
-            if (
-              applyCompressionComboConfig(
-                assignedCompressionCombo as RuntimeCompressionCombo | null,
-                routingComboIds
-              )
-            ) {
-              compressionComboKey = comboName;
-            }
-          }
-        } catch (err) {
-          log?.debug?.(
-            "COMPRESSION",
-            "Combo compression override lookup skipped: " +
-              (err instanceof Error ? err.message : String(err))
-          );
-        }
-      }
-      let namedCombos: Record<string, CompressionPipelineStep[]> = {};
-      try {
-        const { listCompressionCombos } = await import("../../src/lib/db/compressionCombos.ts");
-        namedCombos = buildNamedComboLookup(listCompressionCombos());
-      } catch (err) {
-        log?.debug?.(
-          "COMPRESSION",
-          "Named combos load skipped: " + (err instanceof Error ? err.message : String(err))
-        );
-      }
-      // Phase 3: per-request override. Unknown values fall through in the resolver (never error).
       const compressionHeader = resolveCompressionHeader(clientRawRequest?.headers ?? null);
       if (compressionHeader) {
         log?.debug?.("COMPRESSION", `x-omniroute-compression header: ${compressionHeader}`);
       }
-      const connectionCacheOverride = resolveConnectionCacheOverride(
-        credentials?.providerSpecificData
-      );
-      const modeBeforeOutputTransform = selectCompressionStrategy(
+      const connectionCacheOverride = resolveConnectionCacheOverride(credentials?.providerSpecificData);
+      const resolvedCompression = await resolveRequestCompressionConfig({
         config,
-        compressionComboKey,
+        comboName,
+        routingComboId,
+        isCombo,
         estimatedTokens,
-        body as Record<string, unknown>,
-        { provider, targetFormat, model: effectiveModel, connectionCacheOverride },
-        namedCombos,
-        compressionHeader
-      );
-      if (
-        modeBeforeOutputTransform === "stacked" &&
-        !compressionComboApplied &&
-        !config.compressionComboId &&
-        isBuiltinStackedPipeline(config.stackedPipeline) &&
-        // Don't let the legacy default combo override a panel-configured engines map: when the
-        // operator's explicit engines derive their own stacked pipeline, that pipeline (applied
-        // below from compressionPlan.stackedPipeline) is authoritative. Legacy/backfilled
-        // installs (enginesExplicit false) still fall through to the seeded default combo.
-        !enginesMapDerivesStackedPipeline(config) &&
-        // Never let the legacy seeded default combo shadow the operator's active profile.
-        !activeComboResolves(config, namedCombos)
-      ) {
-        try {
-          const { getDefaultCompressionCombo } =
-            await import("../../src/lib/db/compressionCombos.ts");
-          const defaultCompressionCombo = getDefaultCompressionCombo();
-          if (
-            isStackedCompressionCombo(defaultCompressionCombo as RuntimeCompressionCombo | null) &&
-            applyCompressionComboConfig(defaultCompressionCombo as RuntimeCompressionCombo | null)
-          ) {
-            log?.debug?.(
-              "COMPRESSION",
-              `Default compression combo applied: ${defaultCompressionCombo?.id}`
-            );
-          }
-        } catch (err) {
-          log?.debug?.(
-            "COMPRESSION",
-            "Default compression combo lookup skipped: " +
-              (err instanceof Error ? err.message : String(err))
-          );
-        }
-      }
+        body: body as Record<string, unknown>,
+        cachingContext: { provider, targetFormat, model: effectiveModel, connectionCacheOverride },
+        compressionHeader,
+        log,
+      });
+      config = resolvedCompression.config;
+      const { compressionComboKey, compressionComboApplied, namedCombos } = resolvedCompression;
       // Phase 4A: unified output styles (supersedes cavemanOutputMode via the back-compat shim).
       let outputStyleResult:
         import("../services/compression/outputStyles/apply.ts").OutputStylesResult | null = null;
